@@ -1,31 +1,22 @@
 #!/bin/bash
+set -euo pipefail   # exit on error, undefined var, or pipe failure
 
-set -euo pipefail
-
-# === CONFIGURATION ===
+# ─── CONFIG ────────────────────────────────────────────────────────────────────
+SESSION="nock-miner"
 PROJECT_DIR="$HOME/nockchain"
-PUBKEY="3MXohQ9ExcSQa1qttFgj15yZi3Xptwh2R99FoAgU5MxZYhFMN9bKhAPRWNmrUfXPy3WJoocvkHicCRfm7WV3BLXx7CHKJTnEPJMpdvdNF5rPRfowUBM6HB7LFgorcp6z464V"
-TMUX_SESSION="nock-miner"
+PUBKEY="3KqWPYrkZxM2FjiJ6v1fdff87j9EqARRJifZp67u5jSTvFhqPWkcj37dkUHAMhfDUT5NUtC7Fzjymd6Kd377f4JNzf1ZEZb82wwERPLMw4KriHrrVnJumcWr4A7J2Yq1qtqQ"
+BINARY="$PROJECT_DIR/target/release/nockchain"
+LOG_FILE="$PROJECT_DIR/miner.log"
 
-echo ""
-echo "[🔥] Nockchain Watchdog (Full Restart Mode)"
+# ─── LAUNCH ────────────────────────────────────────────────────────────────────
+echo "[+] Launching Nockchain miner in tmux session ‘$SESSION’…"
 
-# 1. Kill all tmux sessions
-echo "[✂️] Killing all tmux sessions..."
-tmux ls 2>/dev/null | cut -d: -f1 | xargs -r -n1 tmux kill-session -t || true
+# kill old session if it exists
+tmux kill-session -t "$SESSION" 2>/dev/null || true
 
-# 2. Clean up old data
-echo "[🧹] Cleaning up old chain data and sockets..."
-rm -rf "$PROJECT_DIR/.data.nockchain"
-rm -rf "$PROJECT_DIR/.socket/nockchain_npc.sock"
+# start a new detached session and run the miner
+tmux new-session -d -s "$SESSION" \
+  "cd \"$PROJECT_DIR\" && \"$BINARY\" --mining-pubkey \"$PUBKEY\" --mine | tee -a \"$LOG_FILE\""
 
-# 3. Start miner in tmux
-echo "[🚀] Starting miner inside new tmux session: $TMUX_SESSION"
-cd "$PROJECT_DIR"
-tmux new-session -d -s "$TMUX_SESSION" "bash -c 'nockchain --mining-pubkey $PUBKEY --mine | tee -a miner.log'"
-
-echo ""
-echo "[✅] Miner launched inside tmux!"
-echo "    • To view logs: tmux attach -t $TMUX_SESSION"
-echo "    • To detach:   Ctrl + B, then D"
-echo ""
+echo "✅ Started! Attach to it with:"
+echo "    tmux attach -t $SESSION"
