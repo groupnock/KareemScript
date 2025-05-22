@@ -1,19 +1,31 @@
 #!/bin/bash
+
 set -euo pipefail
 
+# === CONFIGURATION ===
 PROJECT_DIR="$HOME/nockchain"
 PUBKEY="3MXohQ9ExcSQa1qttFgj15yZi3Xptwh2R99FoAgU5MxZYhFMN9bKhAPRWNmrUfXPy3WJoocvkHicCRfm7WV3BLXx7CHKJTnEPJMpdvdNF5rPRfowUBM6HB7LFgorcp6z464V"
-SESSION="nock-miner"
+TMUX_SESSION="nock-miner"
 
-# 1) kill any old session
-tmux kill-session -t "$SESSION" 2>/dev/null || true
+echo ""
+echo "[🔥] Nockchain Watchdog (Full Restart Mode)"
 
-# 2) start a brand-new, detached session
-tmux new-session -d -s "$SESSION" -n miner-shell
+# 1. Kill all tmux sessions
+echo "[✂️] Killing all tmux sessions..."
+tmux ls 2>/dev/null | cut -d: -f1 | xargs -r -n1 tmux kill-session -t || true
 
-# 3) send the startup commands (they run inside that session)
-tmux send-keys -t "$SESSION" "cd $PROJECT_DIR" C-m
-tmux send-keys -t "$SESSION" "nockchain --mining-pubkey $PUBKEY --mine | tee -a miner.log" C-m
+# 2. Clean up old data
+echo "[🧹] Cleaning up old chain data and sockets..."
+rm -rf "$PROJECT_DIR/.data.nockchain"
+rm -rf "$PROJECT_DIR/.socket/nockchain_npc.sock"
 
-echo "✅ Launched miner in tmux session '$SESSION'"
-echo "   To attach: tmux attach -t $SESSION"
+# 3. Start miner in tmux
+echo "[🚀] Starting miner inside new tmux session: $TMUX_SESSION"
+cd "$PROJECT_DIR"
+tmux new-session -d -s "$TMUX_SESSION" "bash -c 'nockchain --mining-pubkey $PUBKEY --mine | tee -a miner.log'"
+
+echo ""
+echo "[✅] Miner launched inside tmux!"
+echo "    • To view logs: tmux attach -t $TMUX_SESSION"
+echo "    • To detach:   Ctrl + B, then D"
+echo ""
