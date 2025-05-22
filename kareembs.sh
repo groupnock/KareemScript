@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 set -euo pipefail  # Safer bash options
@@ -9,6 +10,15 @@ PUBKEY="3KqWPYrkZxM2FjiJ6v1fdff87j9EqARRJifZp67u5jSTvFhqPWkcj37dkUHAMhfDUT5NUtC7
 ENV_FILE="$PROJECT_DIR/.env"
 MAKEFILE="$PROJECT_DIR/Makefile"
 TMUX_SESSION="nock-miner"
+
+echo ""
+echo "[!] Cleaning up old Nockchain installation..."
+rm -rf "$PROJECT_DIR"
+rm -rf "$HOME/.nockapp"
+rm -rf "$HOME/.data.nockchain"
+rm -rf "$HOME/.cargo/bin/nockchain" "$HOME/.cargo/bin/nockchain-wallet"
+echo "Done. Sleeping for 10 seconds..."
+sleep 10
 
 echo ""
 echo "[+] Nockchain MainNet Bootstrap Starting..."
