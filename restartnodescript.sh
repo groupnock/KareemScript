@@ -4,26 +4,31 @@ set -euo pipefail
 
 # CONFIG
 PROJECT_DIR="$HOME/nockchain"
-PUBKEY="3KqWPYrkZxM2FjiJ6v1fdff87j9EqARRJifZp67u5jSTvFhqPWkcj37dkUHAMhfDUT5NUtC7Fzjymd6Kd377f4JNzf1ZEZb82wwERPLMw4KriHrrVnJumcWr4A7J2Yq1qtqQ"
+PUBKEY="3MXohQ9ExcSQa1qttFgj15yZi3Xptwh2R99FoAgU5MxZYhFMN9bKhAPRWNmrUfXPy3WJoocvkHicCRfm7WV3BLXx7CHKJTnEPJMpdvdNF5rPRfowUBM6HB7LFgorcp6z464V"
 TMUX_SESSION="nock-miner"
-SOCKET_DIR="$PROJECT_DIR/.socket"
-SOCKET_FILE="$SOCKET_DIR/nockchain_npc.sock"
+SOCKET_FILE="$PROJECT_DIR/.socket/nockchain_npc.sock"
 
 echo "[*] Nockchain Watchdog starting..."
 
-# Check if miner tmux session is running
+# Check if tmux session exists
 if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
-  echo "[✓] Tmux session '$TMUX_SESSION' already running. No action needed."
-else
-  echo "[!] Tmux session not found. Restarting miner..."
+  echo "[✓] Tmux session '$TMUX_SESSION' is already running."
+  exit 0
+fi
 
-  # Clean stale data
-  echo "[~] Removing old data and socket..."
-  rm -rf "$PROJECT_DIR/.data.nockchain"
-  rm -rf "$SOCKET_FILE"
+echo "[!] Session not found. Cleaning up and restarting..."
 
-  echo "[↻] Launching miner..."
-  tmux new-session -d -s "$TMUX_SESSION" "cd $PROJECT_DIR && nockchain --mining-pubkey $PUBKEY --mine | tee -a miner.log"
+# Cleanup
+rm -rf "$PROJECT_DIR/.data.nockchain"
+rm -rf "$SOCKET_FILE"
 
+# Start miner inside tmux with bash shell context
+tmux new-session -d -s "$TMUX_SESSION" "bash -c 'cd $PROJECT_DIR && nockchain --mining-pubkey $PUBKEY --mine | tee -a miner.log'"
+
+# Confirm
+if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
   echo "[✔] Miner restarted in tmux session '$TMUX_SESSION'"
+else
+  echo "[✗] Miner failed to launch. Check if nockchain is installed and the path is correct."
+  exit 1
 fi
