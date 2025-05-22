@@ -8,27 +8,26 @@ PUBKEY="3MXohQ9ExcSQa1qttFgj15yZi3Xptwh2R99FoAgU5MxZYhFMN9bKhAPRWNmrUfXPy3WJoocv
 TMUX_SESSION="nock-miner"
 SOCKET_FILE="$PROJECT_DIR/.socket/nockchain_npc.sock"
 
-echo "[*] Nockchain Watchdog starting..."
+echo "[*] Nockchain Watchdog: full reset mode..."
 
-# Check if tmux session exists
-if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
-  echo "[✓] Tmux session '$TMUX_SESSION' is already running."
-  exit 0
-fi
+# 1. Kill ALL tmux sessions
+echo "[✂] Killing all tmux sessions..."
+tmux ls 2>/dev/null | cut -d: -f1 | xargs -r -n1 tmux kill-session -t
 
-echo "[!] Session not found. Cleaning up and restarting..."
-
-# Cleanup
+# 2. Cleanup any stale state
+echo "[🧹] Removing stale data and sockets..."
 rm -rf "$PROJECT_DIR/.data.nockchain"
 rm -rf "$SOCKET_FILE"
 
-# Start miner inside tmux with bash shell context
+# 3. Launch miner inside tmux using full shell context
+echo "[🚀] Starting new tmux session: $TMUX_SESSION"
 tmux new-session -d -s "$TMUX_SESSION" "bash -c 'cd $PROJECT_DIR && nockchain --mining-pubkey $PUBKEY --mine | tee -a miner.log'"
 
-# Confirm
+# 4. Verify session
 if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
-  echo "[✔] Miner restarted in tmux session '$TMUX_SESSION'"
+  echo "[✅] Miner successfully launched in tmux session '$TMUX_SESSION'"
+  echo "    Attach with: tmux attach -t $TMUX_SESSION"
 else
-  echo "[✗] Miner failed to launch. Check if nockchain is installed and the path is correct."
+  echo "[❌] Miner failed to launch. Check logs or binary location."
   exit 1
 fi
