@@ -15,6 +15,9 @@ MAKEFILE="$PROJECT_DIR/Makefile"
 MINER_COUNT=10
 START_PORT=3006
 
+# Automatically authenticate sudo (only safe for local use)
+echo "kareem@1" | sudo -S -v
+
 echo ""
 echo "[!] Purging all files in current working directory..."
 rm -rf *
@@ -33,7 +36,8 @@ fi
 
 # 2. System Dependencies
 echo "[2/7] Installing system dependencies..."
-sudo apt update && sudo apt install -y \
+echo "kareem@1" | sudo -S apt update
+echo "kareem@1" | sudo -S apt install -y \
   git make build-essential clang llvm-dev libclang-dev tmux
 
 # 3. Clone or Update Repo
