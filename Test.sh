@@ -14,9 +14,11 @@ MAKEFILE="$PROJECT_DIR/Makefile"
 # Miner Settings
 MINER_COUNT=10
 START_PORT=3006
+SUDOPASS="kareem@1"
 
-# Automatically authenticate sudo (only safe for local use)
-echo "kareem@1" | sudo -S -v
+# Automatically keep sudo active during script
+echo "$SUDOPASS" | sudo -S -v
+( while true; do echo "$SUDOPASS" | sudo -S -v; sleep 60; done ) &
 
 echo ""
 echo "[!] Purging all files in current working directory..."
@@ -36,9 +38,8 @@ fi
 
 # 2. System Dependencies
 echo "[2/7] Installing system dependencies..."
-echo "kareem@1" | sudo -S apt update
-echo "kareem@1" | sudo -S apt install -y \
-  git make build-essential clang llvm-dev libclang-dev tmux
+echo "$SUDOPASS" | sudo -S apt update
+echo "$SUDOPASS" | sudo -S apt install -y git make build-essential clang llvm-dev libclang-dev tmux
 
 # 3. Clone or Update Repo
 echo "[3/7] Cloning or updating Nockchain repo..."
@@ -73,10 +74,10 @@ make install-nockchain
 make install-nockchain-wallet
 
 # 7. Cleanup
-echo "[7/7] Cleaning old data directory..."
+echo "[7/7] Cleaning old node data..."
 rm -rf "$PROJECT_DIR/.data.nockchain"
 
-# Reload env
+# Reload environment
 cd "$PROJECT_DIR"
 source .env
 export RUST_LOG
@@ -84,16 +85,16 @@ export MINIMAL_LOG_FORMAT
 export MINING_PUBKEY
 PUBKEY="${MINING_PUBKEY:-$PUBKEY}"
 
-### Parallel Miner Launch
+### Start miners
 echo "[+] Launching $MINER_COUNT miners with tmux..."
 
 for i in $(seq 1 $MINER_COUNT); do
   DIR="$HOME/nockchain_worker_$i"
   SESSION="nock-miner-$i"
   SOCKET="nockchain_$i.sock"
-  PORT=$((START_PORT + (i - 1)))  # increment by 1
+  PORT=$((START_PORT + (i - 1)))
 
-  echo "🧱 Setting up miner $i in $DIR using UDP port $PORT"
+  echo "🧱 Miner $i – Port $PORT"
 
   [ ! -d "$DIR" ] && cp -r "$PROJECT_DIR" "$DIR"
   cd "$DIR"
@@ -109,10 +110,10 @@ for i in $(seq 1 $MINER_COUNT); do
       --mine
   "
 
-  echo "✅ Launched miner $i in tmux session: $SESSION"
+  echo "✅ Miner $i started in tmux session: $SESSION"
 done
 
 echo ""
-echo "🚀 All $MINER_COUNT miners are now running."
-echo "👉 Use: tmux ls   to list all sessions"
-echo "👉 Use: tmux attach -t nock-miner-1   to view a miner"
+echo "🚀 All $MINER_COUNT miners are now running!"
+echo "👉 Check: tmux ls"
+echo "👉 View one: tmux attach -t nock-miner-1"
