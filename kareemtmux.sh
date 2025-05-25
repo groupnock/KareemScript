@@ -23,10 +23,10 @@ CHECK_INTERVAL=30
 TARGET_CPU=80
 
 # Initial number of miners
-INITIAL_MINERS=12
+INITIAL_MINERS=0
 
 # Maximum number of miners allowed
-MAX_MINERS=30
+MAX_MINERS=1
 
 # Count of miners launched
 MINER_COUNT=0
